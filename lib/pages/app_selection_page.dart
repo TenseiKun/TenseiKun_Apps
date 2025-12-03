@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tenseikun_apps/model/app.dart';
 import 'package:tenseikun_apps/pages/applications/1_calculator/calculator_page.dart';
+import 'package:tenseikun_apps/pages/applications/2_ticTacToe/tic_tac_toe_page.dart';
 
 import '../widgets/icon_buttons_widgets.dart';
 
@@ -18,13 +19,14 @@ List<Apps> appList = [
     appType: Calculator(),
   ),
   Apps(
+    appTitle: "Tic-tac-toe Game",
+    appDesc: "App for playing tic tac toe",
+    appType: TicTacToe(),
+  ),
+  Apps(
       appTitle: "Note taker App",
       appDesc: "App for taking notes",
       appType: null),
-  Apps(
-      appTitle: "Tic-tac-toe Game",
-      appDesc: "App for playing tic tac toe",
-      appType: null)
 ];
 
 class _AppSelectionPageState extends State<AppSelectionPage> {

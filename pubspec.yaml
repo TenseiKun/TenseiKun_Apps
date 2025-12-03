@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  font_awesome_flutter: ^10.9.1
   math_expressions: ^2.6.0
 
 dev_dependencies:

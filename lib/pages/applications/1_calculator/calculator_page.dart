@@ -90,15 +90,17 @@ class _CalculatorState extends State<Calculator> {
   String calculateExpression(String expression) {
     try {
       Parser p = Parser();
-      Expression exp = p.parse(expression);
+      String expressionAdjusted =
+          expression.replaceAll("\u00D7", "*").replaceAll("\u00F7", "/");
+      Expression exp = p.parse(expressionAdjusted);
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
+
       if (eval.toString().endsWith("0")) {
         return result = eval.toInt().toString();
       } else {
         return result = eval.toString();
       }
-      // eval.toString().replaceAll(RegExp(r"\.0$"), "");
     } catch (e) {
       return "Error";
     }
@@ -108,19 +110,20 @@ class _CalculatorState extends State<Calculator> {
     try {
       double toBeConverted = double.parse(result);
       double eval = toBeConverted / 100;
-      print(eval);
+
       showResult = true;
       return eval.toString();
-      // eval.toString().replaceAll(RegExp(r"\.0$"), "");
     } catch (e) {
       return "Error";
     }
   }
 
   void showEqual(String calcValue) {
-    showResult = !showResult;
-    if (!showResult && calcValue == CalcBtn.equalKey) {
-      number = "0";
+    if (result.toLowerCase() != "infinity") {
+      showResult = !showResult;
+      if (!showResult && calcValue == CalcBtn.equalKey) {
+        number = "0";
+      }
     }
   }
 
