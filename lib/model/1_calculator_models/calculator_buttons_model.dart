@@ -18,11 +18,12 @@ class CalcBtn {
   static final String equalKey = "=";
   static final String plusKey = "+";
   static final String minusKey = "-";
-  static final String multiplyKey = "X";
-  static final String divideKey = "/";
+  static final String multiplyKey = "\u00D7";
+  static final String divideKey = "\u00F7";
 
   static final String deleteKey = "DEL";
   static final String clearKey = "CLR";
+  static final String backKey = "BACK";
   static final String percentKey = "%";
 }
 
@@ -37,8 +38,10 @@ class CalcKeyBtn extends StatelessWidget {
     return ContainerForCalcBtn(
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-            backgroundColor: btnKey == CalcBtn.equalKey
-                ? Colors.blue[900]
+            backgroundColor: btnKey == CalcBtn.equalKey ||
+                    btnKey == "\u2713" ||
+                    btnKey == CalcBtn.backKey
+                ? Colors.blue[700]
                 : btnKey == CalcBtn.plusKey ||
                         btnKey == CalcBtn.minusKey ||
                         btnKey == CalcBtn.multiplyKey ||

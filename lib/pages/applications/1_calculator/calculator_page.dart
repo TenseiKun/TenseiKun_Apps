@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:math_expressions/math_expressions.dart';
 import 'package:tenseikun_apps/widgets/icon_buttons_widgets.dart';
 import '../../../model/1_calculator_models/calculator_buttons_model.dart';
 
@@ -9,10 +10,120 @@ class Calculator extends StatefulWidget {
   State<Calculator> createState() => _CalculatorState();
 }
 
-String num1 = "0";
-String result = "100";
-
 class _CalculatorState extends State<Calculator> {
+  String number = "0";
+  String result = "0";
+  bool nextNumber = false;
+  bool showResult = false;
+
+  List<dynamic> numbers = [];
+  List<dynamic> operators = [];
+
+  void onClickCalcBtn(String calcValue) {
+    if (calcValue != CalcBtn.clearKey &&
+        calcValue != CalcBtn.deleteKey &&
+        calcValue != CalcBtn.equalKey &&
+        calcValue != CalcBtn.percentKey &&
+        calcValue != CalcBtn.backKey) {
+      addNumber(calcValue);
+    } else if (calcValue == CalcBtn.clearKey ||
+        calcValue == CalcBtn.deleteKey) {
+      deleteNumber(calcValue);
+    } else if (calcValue == CalcBtn.equalKey || calcValue == CalcBtn.backKey) {
+      showEqual(calcValue);
+    } else if (calcValue == CalcBtn.percentKey) {
+      result = percentageExpression(number);
+      setState(() {});
+      return;
+    }
+    calculateExpression(number);
+    setState(() {});
+  }
+
+  void addNumber(String input) {
+    if (showResult) {
+      showResult = false;
+      nextNumber = false;
+      number = result;
+    }
+    if (number == "0") {
+      number = input;
+    } else if (nextNumber) {
+      number = number.substring(0, number.length - 1);
+      number += input;
+      nextNumber = false;
+    } else if (input == CalcBtn.plusKey ||
+        input == CalcBtn.minusKey ||
+        input == CalcBtn.multiplyKey ||
+        input == CalcBtn.divideKey) {
+      number += input;
+      number += "0";
+      nextNumber = true;
+    } else {
+      number += input;
+    }
+  }
+
+  void deleteNumber(String input) {
+    if (showResult) {
+      showResult = false;
+      nextNumber = false;
+      number = result;
+    }
+    if (input == CalcBtn.clearKey) {
+      number = "0";
+      nextNumber = false;
+    } else {
+      number = number.substring(0, number.length - 1);
+      if (number.isEmpty) {
+        number = "0";
+      } else if (number.endsWith(CalcBtn.plusKey) ||
+          number.endsWith(CalcBtn.minusKey) ||
+          number.endsWith(CalcBtn.multiplyKey) ||
+          number.endsWith(CalcBtn.divideKey)) {
+        number = number.substring(0, number.length - 1);
+        nextNumber = false;
+      }
+    }
+  }
+
+  String calculateExpression(String expression) {
+    try {
+      Parser p = Parser();
+      Expression exp = p.parse(expression);
+      ContextModel cm = ContextModel();
+      double eval = exp.evaluate(EvaluationType.REAL, cm);
+      if (eval.toString().endsWith("0")) {
+        return result = eval.toInt().toString();
+      } else {
+        return result = eval.toString();
+      }
+      // eval.toString().replaceAll(RegExp(r"\.0$"), "");
+    } catch (e) {
+      return "Error";
+    }
+  }
+
+  String percentageExpression(String expression) {
+    try {
+      double toBeConverted = double.parse(result);
+      double eval = toBeConverted / 100;
+      print(eval);
+      showResult = true;
+      return eval.toString();
+      // eval.toString().replaceAll(RegExp(r"\.0$"), "");
+    } catch (e) {
+      return "Error";
+    }
+  }
+
+  void showEqual(String calcValue) {
+    showResult = !showResult;
+    if (!showResult && calcValue == CalcBtn.equalKey) {
+      number = "0";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height - 100;
@@ -24,9 +135,7 @@ class _CalculatorState extends State<Calculator> {
         actions: [
           ThemeIconButton(),
           IconButton(
-            onPressed: () {
-              print(screenHeight);
-            },
+            onPressed: () {},
             icon: Icon(Icons.settings),
           ),
         ],
@@ -36,7 +145,8 @@ class _CalculatorState extends State<Calculator> {
             child: Column(
           children: [
             Container(
-              padding: EdgeInsets.only(bottom: 5, right: 15),
+              padding: EdgeInsets.only(
+                  bottom: screenHeight >= 500 ? 20 : 10, right: 15),
               height: panelForOutput,
               width: double.infinity,
               decoration: BoxDecoration(
@@ -49,15 +159,17 @@ class _CalculatorState extends State<Calculator> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (screenHeight >= 500)
+                    if (screenHeight >= 500 && !showResult)
                       Opacity(
                         opacity: 0.5,
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: Text(
-                            result,
-                            style: TextStyle(
-                              fontSize: 30,
+                          child: FittedBox(
+                            child: Text(
+                              result,
+                              style: TextStyle(
+                                fontSize: 30,
+                              ),
                             ),
                           ),
                         ),
@@ -68,10 +180,12 @@ class _CalculatorState extends State<Calculator> {
                           : Alignment.bottomRight,
                       child: FittedBox(
                         child: Text(
-                          num1,
+                          showResult ? result : number,
                           style: TextStyle(
-                            fontSize: 50,
-                          ),
+                              fontSize: screenHeight >= 500 ? 50 : 40,
+                              fontWeight: showResult
+                                  ? FontWeight.bold
+                                  : FontWeight.normal),
                         ),
                       ),
                     ),
@@ -89,107 +203,140 @@ class _CalculatorState extends State<Calculator> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      CalcKeyBtn(btnKey: CalcBtn.deleteKey, onPressed: () {}),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.clearKey,
-                          onPressed: () {
-                            num1 = "0";
-                            setState(() {});
-                          }),
-                      CalcKeyBtn(btnKey: CalcBtn.percentKey, onPressed: () {}),
-                      CalcKeyBtn(btnKey: CalcBtn.divideKey, onPressed: () {}),
+                        btnKey: CalcBtn.deleteKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.deleteKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.clearKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.clearKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.percentKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.percentKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.divideKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.divideKey),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       CalcKeyBtn(
-                          btnKey: CalcBtn.sevenKey,
-                          onPressed: () {
-                            num1 += CalcBtn.sevenKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.sevenKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.sevenKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.eightKey,
-                          onPressed: () {
-                            num1 += CalcBtn.eightKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.eightKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.eightKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.nineKey,
-                          onPressed: () {
-                            num1 += CalcBtn.nineKey;
-                            setState(() {});
-                          }),
-                      CalcKeyBtn(btnKey: CalcBtn.multiplyKey, onPressed: () {}),
+                        btnKey: CalcBtn.nineKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.nineKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.multiplyKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.multiplyKey),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       CalcKeyBtn(
-                          btnKey: CalcBtn.fourKey,
-                          onPressed: () {
-                            num1 += CalcBtn.fourKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.fourKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.fourKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.fiveKey,
-                          onPressed: () {
-                            num1 += CalcBtn.fiveKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.fiveKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.fiveKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.sixKey,
-                          onPressed: () {
-                            num1 += CalcBtn.sixKey;
-                            setState(() {});
-                          }),
-                      CalcKeyBtn(btnKey: CalcBtn.minusKey, onPressed: () {}),
+                        btnKey: CalcBtn.sixKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.sixKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.minusKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.minusKey),
+                      ),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       CalcKeyBtn(
-                          btnKey: CalcBtn.oneKey,
-                          onPressed: () {
-                            num1 += CalcBtn.oneKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.oneKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.oneKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.twoKey,
-                          onPressed: () {
-                            num1 += CalcBtn.twoKey;
-                            setState(() {});
-                          }),
+                        btnKey: CalcBtn.twoKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.twoKey),
+                      ),
                       CalcKeyBtn(
-                          btnKey: CalcBtn.threeKey,
-                          onPressed: () {
-                            num1 += CalcBtn.threeKey;
-                            setState(() {});
-                          }),
-                      CalcKeyBtn(btnKey: CalcBtn.plusKey, onPressed: () {}),
+                        btnKey: CalcBtn.threeKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.threeKey),
+                      ),
+                      CalcKeyBtn(
+                        btnKey: CalcBtn.plusKey,
+                        onPressed: () => onClickCalcBtn(CalcBtn.plusKey),
+                      ),
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
+                  if (!showResult)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
                           flex: 2,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 5),
                             child: CalcKeyBtn(
-                                btnKey: CalcBtn.zeroKey, onPressed: () {}),
-                          )),
-                      CalcKeyBtn(btnKey: CalcBtn.dotKey, onPressed: () {}),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: CalcKeyBtn(
-                            btnKey: CalcBtn.equalKey, onPressed: () {}),
-                      ),
-                    ],
-                  ),
+                              btnKey: CalcBtn.zeroKey,
+                              onPressed: () => onClickCalcBtn(CalcBtn.zeroKey),
+                            ),
+                          ),
+                        ),
+                        CalcKeyBtn(
+                          btnKey: showResult ? CalcBtn.backKey : CalcBtn.dotKey,
+                          onPressed: () => onClickCalcBtn(
+                              showResult ? CalcBtn.backKey : CalcBtn.dotKey),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: CalcKeyBtn(
+                            btnKey: showResult ? "\u2713" : CalcBtn.equalKey,
+                            onPressed: () => onClickCalcBtn(CalcBtn.equalKey),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (showResult)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        CalcKeyBtn(
+                          btnKey: CalcBtn.zeroKey,
+                          onPressed: () => onClickCalcBtn(CalcBtn.zeroKey),
+                        ),
+                        CalcKeyBtn(
+                          btnKey: CalcBtn.dotKey,
+                          onPressed: () => onClickCalcBtn(CalcBtn.dotKey),
+                        ),
+                        CalcKeyBtn(
+                          btnKey: CalcBtn.backKey,
+                          onPressed: () => onClickCalcBtn(CalcBtn.backKey),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: CalcKeyBtn(
+                            btnKey: showResult ? "\u2713" : CalcBtn.equalKey,
+                            onPressed: () => onClickCalcBtn(CalcBtn.equalKey),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
