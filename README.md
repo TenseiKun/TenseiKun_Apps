@@ -19,6 +19,7 @@
 - UI added
 - Buttons added
 - Some functionalities still missing
+
 **Fixing Calculator**
 - Fixing bugs
 - Revamping logic
