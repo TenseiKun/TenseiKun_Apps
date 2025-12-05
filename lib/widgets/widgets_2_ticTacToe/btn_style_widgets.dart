@@ -8,3 +8,12 @@ ButtonStyle forGradientBtnStyle() {
     splashFactory: NoSplash.splashFactory,
   );
 }
+
+ButtonStyle forSelectBtnStyle(Color btnColor) {
+  return ElevatedButton.styleFrom(
+    elevation: 0,
+    backgroundColor: btnColor,
+    overlayColor: Colors.transparent,
+    splashFactory: NoSplash.splashFactory,
+  );
+}

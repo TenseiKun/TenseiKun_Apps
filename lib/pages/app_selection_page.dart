@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tenseikun_apps/model/app.dart';
 import 'package:tenseikun_apps/pages/applications/1_calculator/calculator_page.dart';
-import 'package:tenseikun_apps/pages/applications/2_ticTacToe/tic_tac_toe_page.dart';
+import 'package:tenseikun_apps/pages/applications/2_ticTacToe/ttt_page.dart';
 
 import '../widgets/icon_buttons_widgets.dart';
 

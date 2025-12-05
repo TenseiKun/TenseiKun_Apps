@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenseikun_apps/widgets/const_widgets_2_ticTacToe/btn_widgets.dart';
-import 'package:tenseikun_apps/widgets/const_widgets_2_ticTacToe/container_widgets.dart';
-import 'package:tenseikun_apps/widgets/const_widgets_2_ticTacToe/dialog_widgets.dart';
+import 'package:tenseikun_apps/pages/applications/1_calculator/calculator_page.dart';
+import 'package:tenseikun_apps/pages/applications/2_ticTacToe/ttt_arena_page.dart';
+import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/btn_widgets.dart';
+import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
+import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/dialog_widgets.dart';
 
 import '../../../widgets/icon_buttons_widgets.dart';
 
@@ -20,7 +22,7 @@ class _TicTacToeState extends State<TicTacToe> {
     double screenWidth = MediaQuery.of(context).size.width - 50;
     return Scaffold(
       appBar: AppBar(
-        title: Text("TenseiApps"),
+        title: Text("TenseiApps: Tic-Tac-Toe"),
         actions: [
           ThemeIconButton(),
           IconButton(
@@ -43,14 +45,19 @@ class _TicTacToeState extends State<TicTacToe> {
                     screenWidth: screenWidth,
                     firstColor: Color(0xff373b44),
                     secondColor: Color(0xff4286f4),
-                    child: TicTacToeBtn(
+                    child: TTTModeBtn(
                       icon: FontAwesomeIcons.computer,
                       iconColor: Color(0xff373b80),
                       onPressed: () {
                         showAdaptiveDialog(
                           context: context,
+                          barrierColor: Colors.black87,
                           builder: (context) {
-                            return ShowDifficultiesDialog();
+                            return ShowDifficultiesDialog(
+                              diffPage1: TTTArena(),
+                              diffPage2: Calculator(),
+                              diffPage3: Calculator(),
+                            );
                           },
                         );
                       },
@@ -65,11 +72,20 @@ class _TicTacToeState extends State<TicTacToe> {
                     screenWidth: screenWidth,
                     firstColor: Color(0xffff7518),
                     secondColor: Color(0xffFDEE00),
-                    child: TicTacToeBtn(
+                    child: TTTModeBtn(
                       icon: FontAwesomeIcons.person,
                       iconColor: Color(0xffff7580),
                       onPressed: () {
-                        print("hotdog");
+                        showAdaptiveDialog(
+                          context: context,
+                          barrierColor: Colors.black87,
+                          builder: (context) {
+                            return ShowPlayerModeDialog(
+                              playerModePage1: Calculator(),
+                              playerModePage2: Calculator(),
+                            );
+                          },
+                        );
                       },
                       child: Text(
                         "You vs Friend",
@@ -82,10 +98,21 @@ class _TicTacToeState extends State<TicTacToe> {
                     screenWidth: screenWidth,
                     firstColor: Color(0xff3d0c02),
                     secondColor: Color(0xffb92e34),
-                    child: TicTacToeBtn(
+                    child: TTTModeBtn(
                       icon: FontAwesomeIcons.mountain,
                       iconColor: Color(0xff3d0c50),
-                      onPressed: () {},
+                      onPressed: () {
+                        showAdaptiveDialog(
+                          context: context,
+                          barrierColor: Colors.black87,
+                          builder: (context) {
+                            return ShowCampaignDialog(
+                              restartPage: Calculator(),
+                              lastProgressPage: Calculator(),
+                            );
+                          },
+                        );
+                      },
                       child: Text(
                         "Campaign",
                         style: TextStyle(color: Colors.white, fontSize: 25),

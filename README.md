@@ -8,6 +8,7 @@
 1. [Version 0.1](#version-01)
 2. [Version 0.12](#version-012)
 3. [Version 0.13](#version-013)
+4. [Version 0.13.5](#vesion-0135)
 
 # Version 0.1
 **Release of Calculator**
@@ -28,3 +29,10 @@
 **Fixing Calculator**
 - Fixing bugs
 - Revamping logic again
+
+# Vesion 0.13.5
+**Updating Tic-Tac-Toe**
+- Added UI and buttons
+- Added functions
+- Other functions are not complete
+- Necessary attributes added
