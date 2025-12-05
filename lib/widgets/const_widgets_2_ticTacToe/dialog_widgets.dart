@@ -8,6 +8,7 @@ class ShowDifficultiesDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return BgContainer(
       child: AlertDialog(
+        backgroundColor: Colors.transparent,
         content: Column(
           children: [
             Text("data"),

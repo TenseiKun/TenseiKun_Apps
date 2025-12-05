@@ -13,11 +13,9 @@ class Calculator extends StatefulWidget {
 class _CalculatorState extends State<Calculator> {
   String number = "0";
   String result = "0";
+  int numberCount = 1;
   bool nextNumber = false;
   bool showResult = false;
-
-  List<dynamic> numbers = [];
-  List<dynamic> operators = [];
 
   void onClickCalcBtn(String calcValue) {
     if (calcValue != CalcBtn.clearKey &&
@@ -45,20 +43,42 @@ class _CalculatorState extends State<Calculator> {
       showResult = false;
       nextNumber = false;
       number = result;
+      numberCount = 1;
     }
-    if (number == "0") {
+    if (number.endsWith("0") && nextNumber) {
+      if (input == CalcBtn.plusKey ||
+          input == CalcBtn.minusKey ||
+          input == CalcBtn.multiplyKey ||
+          input == CalcBtn.divideKey) {
+        number += input;
+        number += "0";
+        numberCount++;
+        return;
+      }
+    }
+    if (number == "0" &&
+        (input != CalcBtn.plusKey &&
+            input != CalcBtn.minusKey &&
+            input != CalcBtn.multiplyKey &&
+            input != CalcBtn.divideKey)) {
       number = input;
-    } else if (nextNumber) {
+    } else if (nextNumber &&
+        (input != CalcBtn.plusKey &&
+            input != CalcBtn.minusKey &&
+            input != CalcBtn.multiplyKey &&
+            input != CalcBtn.divideKey)) {
       number = number.substring(0, number.length - 1);
       number += input;
       nextNumber = false;
-    } else if (input == CalcBtn.plusKey ||
-        input == CalcBtn.minusKey ||
-        input == CalcBtn.multiplyKey ||
-        input == CalcBtn.divideKey) {
+    } else if (number == "0" ||
+        (input == CalcBtn.plusKey ||
+            input == CalcBtn.minusKey ||
+            input == CalcBtn.multiplyKey ||
+            input == CalcBtn.divideKey)) {
       number += input;
       number += "0";
       nextNumber = true;
+      numberCount++;
     } else {
       number += input;
     }
@@ -66,13 +86,15 @@ class _CalculatorState extends State<Calculator> {
 
   void deleteNumber(String input) {
     if (showResult) {
+      String tempNumber = number;
       showResult = false;
       nextNumber = false;
-      number = result;
+      number = tempNumber;
     }
     if (input == CalcBtn.clearKey) {
       number = "0";
       nextNumber = false;
+      numberCount = 1;
     } else {
       number = number.substring(0, number.length - 1);
       if (number.isEmpty) {
@@ -83,26 +105,38 @@ class _CalculatorState extends State<Calculator> {
           number.endsWith(CalcBtn.divideKey)) {
         number = number.substring(0, number.length - 1);
         nextNumber = false;
+        numberCount--;
       }
     }
   }
 
+  bool checkDotValid(String expression) {
+    final blocks = expression.split(RegExp(r'[+-×÷]'));
+    for (final block in blocks) {
+      final dotCount = '.'.allMatches(block).length;
+      if (dotCount > 1) return false;
+    }
+    return true;
+  }
+
   String calculateExpression(String expression) {
     try {
+      if (!checkDotValid(expression)) {
+        return result = "Error";
+      }
       Parser p = Parser();
       String expressionAdjusted =
           expression.replaceAll("\u00D7", "*").replaceAll("\u00F7", "/");
       Expression exp = p.parse(expressionAdjusted);
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
-
       if (eval.toString().endsWith("0")) {
         return result = eval.toInt().toString();
       } else {
         return result = eval.toString();
       }
     } catch (e) {
-      return "Error";
+      return result = "Error";
     }
   }
 
@@ -110,7 +144,6 @@ class _CalculatorState extends State<Calculator> {
     try {
       double toBeConverted = double.parse(result);
       double eval = toBeConverted / 100;
-
       showResult = true;
       return eval.toString();
     } catch (e) {
@@ -119,10 +152,11 @@ class _CalculatorState extends State<Calculator> {
   }
 
   void showEqual(String calcValue) {
-    if (result.toLowerCase() != "infinity") {
+    if (result.toLowerCase() != "infinity" && result.toLowerCase() != "error") {
       showResult = !showResult;
       if (!showResult && calcValue == CalcBtn.equalKey) {
         number = "0";
+        numberCount = 1;
       }
     }
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenseikun_apps/widgets/const_widgets_2_ticTacToe/buttonStyle_widgets.dart';
+import 'package:tenseikun_apps/widgets/const_widgets_2_ticTacToe/button_style_widgets.dart';
 
 class TicTacToeBtn extends StatelessWidget {
   const TicTacToeBtn(
