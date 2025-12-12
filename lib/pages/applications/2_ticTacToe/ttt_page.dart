@@ -54,9 +54,18 @@ class _TicTacToeState extends State<TicTacToe> {
                           barrierColor: Colors.black87,
                           builder: (context) {
                             return ShowDifficultiesDialog(
-                              diffPage1: TTTArena(),
-                              diffPage2: Calculator(),
-                              diffPage3: Calculator(),
+                              diffPage1: TTTArena(
+                                aiMode: true,
+                                aiDifficulty: "Beginner",
+                              ),
+                              diffPage2: TTTArena(
+                                aiMode: true,
+                                aiDifficulty: "Amateur",
+                              ),
+                              diffPage3: TTTArena(
+                                aiMode: true,
+                                aiDifficulty: "Insanity",
+                              ),
                             );
                           },
                         );

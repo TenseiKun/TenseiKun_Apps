@@ -1,29 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:tenseikun_apps/data/2_TicTacToe/ttt_AI.dart';
 
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
+import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/dialog_widgets.dart';
 
 import '../../../widgets/dialog_widgets.dart';
 import '../../../widgets/icon_buttons_widgets.dart';
 import '../../../widgets/widgets_2_ticTacToe/btn_widgets.dart';
 
 class TTTArena extends StatefulWidget {
-  const TTTArena({super.key});
+  const TTTArena({super.key, required this.aiMode, required this.aiDifficulty});
+  final bool aiMode;
+  final String aiDifficulty;
 
   @override
   State<TTTArena> createState() => _TTTArenaState();
 }
 
 class _TTTArenaState extends State<TTTArena> {
-  String arenaText = "Round 1";
-  String subArenaText = "Player 1 turn!";
-  String currentPlayer = "Player 1";
+  int turnCounter = 1;
+  bool playerTag = true;
+  late String currentPlayer;
+  String player1Lbl = "Player 1";
+  String player2Lbl = "Player 2";
   String player1Name = "Jiante Marata";
   String player2Name = "Kurosaki Ichigo";
   String winNumberP1 = "10";
   String winNumberP2 = "6";
   String winRateP1 = "100%";
   String winRateP2 = "69.42%";
+  bool aiMode = false;
+
+  String arenaText() {
+    return "Turn $turnCounter";
+  }
+
+  String subArenaText() {
+    return "${checkCurrentPlayer()}: ${playerTag ? player1Name : player2Name} acting!";
+  }
+
+  String checkCurrentPlayer() {
+    return currentPlayer = playerTag ? player1Lbl : player2Lbl;
+  }
 
   Map<int, String?> boxes = {
     00: null,
@@ -37,30 +56,205 @@ class _TTTArenaState extends State<TTTArena> {
     22: null,
   };
 
+  @override
+  void initState() {
+    super.initState();
+    aiMode = widget.aiMode;
+    if (aiMode) {
+      player2Lbl = "Player AI";
+      player2Name = "Bing Chilling";
+    }
+  }
+
   void onTap(int index) {
     if (boxes[index] != null) {
       setState(() {});
       return;
     }
-    boxes[index] = currentPlayer;
+
+    boxes[index] = checkCurrentPlayer();
+
+    if (checkWinner(checkCurrentPlayer())) {
+      setState(() {});
+      return;
+    } else if (noWinner()) {
+      setState(() {});
+      return;
+    }
     switchPlayer();
     setState(() {});
   }
 
-  String setPlayerTag() {
-    return currentPlayer;
-  }
-
   void switchPlayer() {
-    setPlayerTag();
-    if (currentPlayer == "Player 1") {
-      currentPlayer = "Player 2";
+    if (playerTag) {
+      playerTag = false;
+      if (aiMode) {
+        boxes[aiActing(
+          widget.aiDifficulty,
+          boxes,
+          player1Lbl,
+          player2Lbl,
+        )!] = checkCurrentPlayer();
+        if (checkWinner(checkCurrentPlayer())) {
+          setState(() {});
+          return;
+        } else if (noWinner()) {
+          setState(() {});
+          return;
+        }
+        turnCounter++;
+        playerTag = true;
+      }
     } else {
-      currentPlayer = "Player 1";
+      playerTag = true;
+      if (aiMode) {
+        boxes[aiActing(
+          widget.aiDifficulty,
+          boxes,
+          player1Lbl,
+          player2Lbl,
+        )!] = checkCurrentPlayer();
+        if (checkWinner(checkCurrentPlayer())) {
+          setState(() {});
+          return;
+        } else if (noWinner()) {
+          setState(() {});
+          return;
+        }
+        turnCounter++;
+        playerTag = false;
+      }
+      turnCounter++;
     }
   }
 
-  void checkWinner() {}
+  final List<List<int>> winPatterns = [
+    //rows
+    [00, 01, 02],
+    [10, 11, 12],
+    [20, 21, 22],
+    //columns
+    [00, 10, 20],
+    [01, 11, 21],
+    [02, 12, 22],
+    //diagonals
+    [00, 11, 22],
+    [20, 11, 02],
+  ];
+
+  bool checkWinner(String currentPlayer) {
+    for (var pattern in winPatterns) {
+      int a = pattern[0];
+      int b = pattern[1];
+      int c = pattern[2];
+      if (boxes[a] == currentPlayer &&
+          boxes[b] == currentPlayer &&
+          boxes[c] == currentPlayer) {
+        announceWinner();
+        return true;
+      }
+    }
+    // if (boxes[00] == currentPlayer &&
+    //     boxes[01] == currentPlayer &&
+    //     boxes[02] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[10] == currentPlayer &&
+    //     boxes[11] == currentPlayer &&
+    //     boxes[12] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[20] == currentPlayer &&
+    //     boxes[21] == currentPlayer &&
+    //     boxes[22] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[00] == currentPlayer &&
+    //     boxes[10] == currentPlayer &&
+    //     boxes[20] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[01] == currentPlayer &&
+    //     boxes[11] == currentPlayer &&
+    //     boxes[21] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[02] == currentPlayer &&
+    //     boxes[12] == currentPlayer &&
+    //     boxes[22] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[00] == currentPlayer &&
+    //     boxes[11] == currentPlayer &&
+    //     boxes[22] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // } else if (boxes[20] == currentPlayer &&
+    //     boxes[11] == currentPlayer &&
+    //     boxes[02] == currentPlayer) {
+    //   announceWinner();
+    //   return true;
+    // }
+    return false;
+  }
+
+  bool noWinner() {
+    bool noWinner;
+    if (boxes[00] != null &&
+        boxes[01] != null &&
+        boxes[02] != null &&
+        boxes[10] != null &&
+        boxes[11] != null &&
+        boxes[12] != null &&
+        boxes[20] != null &&
+        boxes[21] != null &&
+        boxes[22] != null) {
+      noWinner = true;
+      announceWinner(status: noWinner);
+      return noWinner;
+    } else {
+      noWinner = false;
+      return noWinner;
+    }
+  }
+
+  void announceWinner({bool? status}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return ShowWinnerDialog(
+          winnerPlayer: status == true
+              ? "No one"
+              : playerTag
+                  ? player1Lbl
+                  : player2Lbl,
+          winnerPlayerName: status == true
+              ? "No one"
+              : (playerTag ? player1Name : player2Name),
+          turns: turnCounter,
+          onPressedRestart: () {
+            Navigator.pop(context);
+            resetArena();
+          },
+          onPressedCancel: () {
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
+  void resetArena() {
+    turnCounter = 1;
+    playerTag = true;
+    boxes.updateAll(
+      (key, value) {
+        return value = null;
+      },
+    );
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,11 +308,11 @@ class _TTTArenaState extends State<TTTArena> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          arenaText,
+                          arenaText(),
                           style: TextStyle(fontSize: 35),
                         ),
                         Text(
-                          subArenaText,
+                          subArenaText(),
                           style: TextStyle(fontSize: 20),
                         ),
                       ],
@@ -136,17 +330,17 @@ class _TTTArenaState extends State<TTTArena> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TTTBoxesContainer(
-                          playerTag: boxes[00],
+                          playerLbl: boxes[00],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(00),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[01],
+                          playerLbl: boxes[01],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(01),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[02],
+                          playerLbl: boxes[02],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(02),
                         ),
@@ -156,17 +350,17 @@ class _TTTArenaState extends State<TTTArena> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TTTBoxesContainer(
-                          playerTag: boxes[10],
+                          playerLbl: boxes[10],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(10),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[11],
+                          playerLbl: boxes[11],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(11),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[12],
+                          playerLbl: boxes[12],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(12),
                         ),
@@ -176,17 +370,17 @@ class _TTTArenaState extends State<TTTArena> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TTTBoxesContainer(
-                          playerTag: boxes[20],
+                          playerLbl: boxes[20],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(20),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[21],
+                          playerLbl: boxes[21],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(21),
                         ),
                         TTTBoxesContainer(
-                          playerTag: boxes[22],
+                          playerLbl: boxes[22],
                           panelSize: panelForBoxes,
                           onTap: () => onTap(22),
                         ),

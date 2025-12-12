@@ -44,7 +44,7 @@ class ShowDifficultiesDialog extends StatelessWidget {
                   );
                 },
                 child: Text(
-                  "Normal",
+                  "Beginner",
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.black),
                 ),
@@ -224,6 +224,79 @@ class ShowCampaignDialog extends StatelessWidget {
                   "Continue Last Progress",
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShowWinnerDialog extends StatelessWidget {
+  const ShowWinnerDialog(
+      {super.key,
+      required this.winnerPlayer,
+      required this.winnerPlayerName,
+      required this.turns,
+      required this.onPressedRestart,
+      required this.onPressedCancel});
+
+  final String winnerPlayer;
+  final String winnerPlayerName;
+  final int turns;
+  final VoidCallback? onPressedRestart;
+  final VoidCallback? onPressedCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.transparent,
+      contentPadding: EdgeInsets.all(0),
+      titlePadding: EdgeInsets.all(10),
+      title: Text(
+        "$winnerPlayer won!",
+        textAlign: TextAlign.center,
+      ),
+      content: DlgBgContainer(
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 10,
+            children: [
+              Text(
+                "The battle took $turns turns.\n$winnerPlayerName won the game!",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(
+                height: 70,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    SelectBtnFromWinnerDlg(
+                      btnColor: Colors.yellow,
+                      onPressed: onPressedRestart,
+                      child: FittedBox(
+                        child: Text(
+                          "One more Round!",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ),
+                    ),
+                    SelectBtnFromWinnerDlg(
+                      btnColor: Colors.green,
+                      onPressed: onPressedCancel,
+                      child: Text(
+                        "Exit",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

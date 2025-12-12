@@ -66,3 +66,29 @@ class SelectBtn extends StatelessWidget {
     );
   }
 }
+
+class SelectBtnFromWinnerDlg extends StatelessWidget {
+  const SelectBtnFromWinnerDlg(
+      {super.key,
+      required this.onPressed,
+      required this.child,
+      required this.btnColor});
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Color btnColor;
+
+  @override
+  Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width - 50;
+    return SizedBox(
+      width: screenWidth * 0.35,
+      height: 60,
+      child: ElevatedButton(
+        style: forSelectBtnStyle(btnColor),
+        onPressed: onPressed,
+        child: child,
+      ),
+    );
+  }
+}

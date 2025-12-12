@@ -117,10 +117,10 @@ class TTTBoxesContainer extends StatelessWidget {
   const TTTBoxesContainer(
       {super.key,
       required this.panelSize,
-      required this.playerTag,
+      required this.playerLbl,
       required this.onTap});
 
-  final String? playerTag;
+  final String? playerLbl;
   final double panelSize;
   final VoidCallback onTap;
 
@@ -138,13 +138,13 @@ class TTTBoxesContainer extends StatelessWidget {
           ),
         ),
         child: Icon(
-          playerTag == "Player 1"
+          playerLbl == "Player 1"
               ? FontAwesomeIcons.circle
-              : playerTag == "Player 2"
+              : playerLbl == "Player 2" || playerLbl == "Player AI"
                   ? FontAwesomeIcons.x
                   : null,
           size: 80,
-          color: playerTag == "Player 1" ? Colors.blue : Colors.red,
+          color: playerLbl == "Player 1" ? Colors.blue : Colors.red,
         ),
       ),
     );
