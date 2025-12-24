@@ -114,11 +114,12 @@ class BtnArenaBgContainer extends StatelessWidget {
 }
 
 class TTTBoxesContainer extends StatelessWidget {
-  const TTTBoxesContainer(
-      {super.key,
-      required this.panelSize,
-      required this.playerLbl,
-      required this.onTap});
+  const TTTBoxesContainer({
+    super.key,
+    required this.panelSize,
+    required this.playerLbl,
+    required this.onTap,
+  });
 
   final String? playerLbl;
   final double panelSize;

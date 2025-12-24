@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenseikun_apps/data/2_TicTacToe/ttt_AI.dart';
+import 'package:tenseikun_apps/data/2_TicTacToe/TTT_AI.dart';
 
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/dialog_widgets.dart';
@@ -10,8 +13,13 @@ import '../../../widgets/icon_buttons_widgets.dart';
 import '../../../widgets/widgets_2_ticTacToe/btn_widgets.dart';
 
 class TTTArena extends StatefulWidget {
-  const TTTArena({super.key, required this.aiMode, required this.aiDifficulty});
+  const TTTArena(
+      {super.key,
+      required this.aiMode,
+      required this.aiDifficulty,
+      required this.timedMode});
   final bool aiMode;
+  final bool timedMode;
   final String aiDifficulty;
 
   @override
@@ -19,7 +27,13 @@ class TTTArena extends StatefulWidget {
 }
 
 class _TTTArenaState extends State<TTTArena> {
+  bool arenaReady = false;
+  Random random = Random();
+  Timer? turnTime;
   int turnCounter = 1;
+  int actions = 0;
+  int timer = 0;
+  int maxTime = 3;
   bool playerTag = true;
   late String currentPlayer;
   String player1Lbl = "Player 1";
@@ -31,6 +45,8 @@ class _TTTArenaState extends State<TTTArena> {
   String winRateP1 = "100%";
   String winRateP2 = "69.42%";
   bool aiMode = false;
+  bool disablePlayerTurn = false;
+  bool timedMode = false;
 
   String arenaText() {
     return "Turn $turnCounter";
@@ -59,21 +75,55 @@ class _TTTArenaState extends State<TTTArena> {
   @override
   void initState() {
     super.initState();
+    whoGoesFirst();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    turnTime!.cancel();
+  }
+
+  void whoGoesFirst() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final result = await showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) {
+          return MatchUpDlg(aiMode: widget.aiMode);
+        },
+      );
+      playerTag = result;
+      readyArena();
+      if (aiMode && playerTag == false) {
+        switchPlayer();
+      }
+    });
+  }
+
+  void readyArena() {
     aiMode = widget.aiMode;
+    timedMode = widget.timedMode;
+    arenaReady = true;
     if (aiMode) {
       player2Lbl = "Player AI";
       player2Name = "Bing Chilling";
     }
+    if (timedMode) {
+      turnTimer();
+    }
+    setState(() {});
   }
 
   void onTap(int index) {
+    if (disablePlayerTurn) {
+      return;
+    }
     if (boxes[index] != null) {
       setState(() {});
       return;
     }
-
     boxes[index] = checkCurrentPlayer();
-
     if (checkWinner(checkCurrentPlayer())) {
       setState(() {});
       return;
@@ -81,51 +131,64 @@ class _TTTArenaState extends State<TTTArena> {
       setState(() {});
       return;
     }
+    actions++;
+    if (aiMode) {
+      playerTag = !playerTag;
+    }
     switchPlayer();
+    turnManager();
     setState(() {});
   }
 
-  void switchPlayer() {
-    if (playerTag) {
-      playerTag = false;
-      if (aiMode) {
-        boxes[aiActing(
-          widget.aiDifficulty,
-          boxes,
-          player1Lbl,
-          player2Lbl,
-        )!] = checkCurrentPlayer();
-        if (checkWinner(checkCurrentPlayer())) {
-          setState(() {});
-          return;
-        } else if (noWinner()) {
-          setState(() {});
-          return;
-        }
-        turnCounter++;
-        playerTag = true;
-      }
-    } else {
-      playerTag = true;
-      if (aiMode) {
-        boxes[aiActing(
-          widget.aiDifficulty,
-          boxes,
-          player1Lbl,
-          player2Lbl,
-        )!] = checkCurrentPlayer();
-        if (checkWinner(checkCurrentPlayer())) {
-          setState(() {});
-          return;
-        } else if (noWinner()) {
-          setState(() {});
-          return;
-        }
-        turnCounter++;
+  void switchPlayer() async {
+    if (!aiMode) {
+      if (playerTag) {
         playerTag = false;
+        if (timedMode) {
+          turnTime!.cancel();
+          turnTimer();
+        }
+      } else if (!playerTag) {
+        playerTag = true;
+        if (timedMode) {
+          turnTime!.cancel();
+          turnTimer();
+        }
       }
-      turnCounter++;
     }
+    if (aiMode) {
+      await aiThinking();
+      boxes[aiActing(widget.aiDifficulty, boxes, player1Lbl, player2Lbl)!] =
+          checkCurrentPlayer();
+      if (checkWinner(checkCurrentPlayer())) {
+        setState(() {});
+        return;
+      } else if (noWinner()) {
+        setState(() {});
+        return;
+      }
+      actions++;
+      playerTag = !playerTag;
+      turnManager();
+    }
+  }
+
+  void turnManager() {
+    if (actions == 2) {
+      turnCounter++;
+      actions = 0;
+    }
+  }
+
+  Future aiThinking() async {
+    int seconds = random.nextInt(2) + 1;
+    disablePlayerTurn = true;
+    while (seconds > 0) {
+      await Future.delayed(Duration(seconds: 1));
+      seconds--;
+      setState(() {});
+    }
+    disablePlayerTurn = false;
   }
 
   final List<List<int>> winPatterns = [
@@ -154,47 +217,6 @@ class _TTTArenaState extends State<TTTArena> {
         return true;
       }
     }
-    // if (boxes[00] == currentPlayer &&
-    //     boxes[01] == currentPlayer &&
-    //     boxes[02] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[10] == currentPlayer &&
-    //     boxes[11] == currentPlayer &&
-    //     boxes[12] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[20] == currentPlayer &&
-    //     boxes[21] == currentPlayer &&
-    //     boxes[22] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[00] == currentPlayer &&
-    //     boxes[10] == currentPlayer &&
-    //     boxes[20] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[01] == currentPlayer &&
-    //     boxes[11] == currentPlayer &&
-    //     boxes[21] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[02] == currentPlayer &&
-    //     boxes[12] == currentPlayer &&
-    //     boxes[22] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[00] == currentPlayer &&
-    //     boxes[11] == currentPlayer &&
-    //     boxes[22] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // } else if (boxes[20] == currentPlayer &&
-    //     boxes[11] == currentPlayer &&
-    //     boxes[02] == currentPlayer) {
-    //   announceWinner();
-    //   return true;
-    // }
     return false;
   }
 
@@ -219,7 +241,11 @@ class _TTTArenaState extends State<TTTArena> {
   }
 
   void announceWinner({bool? status}) {
+    if (timedMode) {
+      turnTime!.cancel();
+    }
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) {
         return ShowWinnerDialog(
@@ -235,6 +261,7 @@ class _TTTArenaState extends State<TTTArena> {
           onPressedRestart: () {
             Navigator.pop(context);
             resetArena();
+            whoGoesFirst();
           },
           onPressedCancel: () {
             Navigator.pop(context);
@@ -246,244 +273,304 @@ class _TTTArenaState extends State<TTTArena> {
   }
 
   void resetArena() {
+    arenaReady = false;
     turnCounter = 1;
+    actions = 0;
     playerTag = true;
     boxes.updateAll(
       (key, value) {
         return value = null;
       },
     );
+    if (timedMode) {
+      maxTime = 3;
+      turnTimer();
+    }
     setState(() {});
+  }
+
+  void turnTimer() {
+    timer = maxTime;
+    if (arenaReady) {
+      turnTime = Timer.periodic(
+        Duration(seconds: 1),
+        (_) {
+          if (timer > 0) {
+            timer--;
+            setState(() {});
+          } else {
+            playerTag = !playerTag;
+            announceWinner(status: false);
+          }
+        },
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height - 100;
-    double screenWidth = MediaQuery.of(context).size.height - 50;
+    double screenWidth = MediaQuery.of(context).size.width;
     double panelForStatusMessage = screenHeight * 0.12;
     double panelForBoxes = screenHeight * 0.5;
     double panelForButtons = screenHeight * 0.32;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("TenseiApps: Tic-Tac-Toe"),
-        leading: BackButton(
-          onPressed: () {
-            showAdaptiveDialog(
-              context: context,
-              builder: (context) {
-                return ConfirmationDialog(
-                  titleText: "Are you sure you want to exit? ",
-                  confirmText: "Yes",
-                  cancelText: "No",
-                  contents: [
-                    Text(
-                      "Progress will reset",
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
-        actions: [
-          ThemeIconButton(),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.settings),
+    if (!arenaReady) {
+      return Scaffold(
+        body: SafeArea(
+          child: Container(
+            color: Colors.green[900],
+            padding: EdgeInsets.all(8),
+            child: Center(
+              child: SizedBox(
+                width: screenWidth * 0.8,
+                height: screenHeight * 0.5,
+                child: CircularProgressIndicator.adaptive(),
+              ),
+            ),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Container(
-          color: Colors.green[900],
-          padding: EdgeInsets.all(8),
-          child: Column(
-            children: [
-              TTTPanelsContainer(
-                height: panelForStatusMessage,
-                width: screenWidth,
-                child: Center(
-                  child: FittedBox(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          arenaText(),
-                          style: TextStyle(fontSize: 35),
-                        ),
-                        Text(
-                          subArenaText(),
-                          style: TextStyle(fontSize: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              TTTPanelsContainer(
-                // color: Colors.blue,
-                height: panelForBoxes,
-                width: screenWidth,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TTTBoxesContainer(
-                          playerLbl: boxes[00],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(00),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[01],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(01),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[02],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(02),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TTTBoxesContainer(
-                          playerLbl: boxes[10],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(10),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[11],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(11),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[12],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(12),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TTTBoxesContainer(
-                          playerLbl: boxes[20],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(20),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[21],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(21),
-                        ),
-                        TTTBoxesContainer(
-                          playerLbl: boxes[22],
-                          panelSize: panelForBoxes,
-                          onTap: () => onTap(22),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              TTTPanelsContainer(
-                height: panelForButtons,
-                width: screenWidth,
-                child: Column(
-                  spacing: 20,
-                  children: [
-                    FittedBox(
-                      child: Row(
-                        spacing: 10,
+        ),
+      );
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("TenseiApps: Tic-Tac-Toe"),
+          leading: BackButton(
+            onPressed: () {
+              showAdaptiveDialog(
+                context: context,
+                builder: (context) {
+                  return ConfirmationDialog(
+                    titleText: "Are you sure you want to exit? ",
+                    confirmText: "Yes",
+                    cancelText: "No",
+                    contents: [
+                      Text(
+                        "Progress will reset",
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          actions: [
+            ThemeIconButton(),
+            IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.settings),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Container(
+            color: Colors.green[900],
+            padding: EdgeInsets.all(8),
+            child: Column(
+              children: [
+                TTTPanelsContainer(
+                  height: panelForStatusMessage,
+                  width: screenWidth,
+                  child: Center(
+                    child: FittedBox(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "PLAYER 1",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text("Username: $player1Name"),
-                              Text("Wins: $winNumberP1"),
-                              Text("Win rate: $winRateP1"),
-                              Text("Why are we here? just to suffer")
-                            ],
+                          Text(
+                            arenaText(),
+                            style: TextStyle(fontSize: 35),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "PLAYER 2",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text("Username: $player2Name"),
-                              Text("Wins: $winNumberP2"),
-                              Text("Win rate: $winRateP2"),
-                              Text("Like share and subscribe!")
-                            ],
+                          Text(
+                            subArenaText(),
+                            style: TextStyle(fontSize: 20),
                           ),
+                          timedMode
+                              ? RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(fontSize: 15),
+                                    text: "Time Remaining: ",
+                                    children: [
+                                      TextSpan(
+                                        text: timer.toString(),
+                                        style:
+                                            TextStyle(color: Colors.amber[400]),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : SizedBox()
                         ],
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        BtnArenaBgContainer(
-                          height: screenHeight * 0.12,
-                          width: screenWidth * 0.2,
-                          colors: [
-                            Color(0xffADA996),
-                            Color(0xffF2F2F2),
-                            Color(0xffDBDBDB),
-                            Color(0xffEAEAEA),
-                          ],
-                          child: TTTModeBtn(
-                            icon: FontAwesomeIcons.flag,
-                            iconColor: Color(0xffADA999),
-                            onPressed: () {},
-                            child: Text(
-                              "Surrender",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 25),
-                            ),
-                          ),
-                        ),
-                        BtnArenaBgContainer(
-                          height: screenHeight * 0.12,
-                          width: screenWidth * 0.2,
-                          colors: [
-                            Color(0xffff7518),
-                            Color(0xffFDEE00),
-                          ],
-                          child: TTTModeBtn(
-                            icon: FontAwesomeIcons.computer,
-                            iconColor: Color(0xffff7580),
-                            onPressed: () {},
-                            child: Text(
-                              "Ragebait",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 25),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                TTTPanelsContainer(
+                  // color: Colors.blue,
+                  height: panelForBoxes,
+                  width: screenWidth,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TTTBoxesContainer(
+                            playerLbl: boxes[00],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(00),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[01],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(01),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[02],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(02),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TTTBoxesContainer(
+                            playerLbl: boxes[10],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(10),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[11],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(11),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[12],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(12),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TTTBoxesContainer(
+                            playerLbl: boxes[20],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(20),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[21],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(21),
+                          ),
+                          TTTBoxesContainer(
+                            playerLbl: boxes[22],
+                            panelSize: panelForBoxes,
+                            onTap: () => onTap(22),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                TTTPanelsContainer(
+                  height: panelForButtons,
+                  width: screenWidth,
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      FittedBox(
+                        child: Row(
+                          spacing: 10,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "PLAYER 1",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text("Username: $player1Name"),
+                                Text("Wins: $winNumberP1"),
+                                Text("Win rate: $winRateP1"),
+                                Text("Why are we here? just to suffer")
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "PLAYER 2",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text("Username: $player2Name"),
+                                Text("Wins: $winNumberP2"),
+                                Text("Win rate: $winRateP2"),
+                                Text("Like share and subscribe!")
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          BtnArenaBgContainer(
+                            height: screenHeight * 0.12,
+                            width: screenWidth * 0.4,
+                            colors: [
+                              Color(0xffADA996),
+                              Color(0xffF2F2F2),
+                              Color(0xffDBDBDB),
+                              Color(0xffEAEAEA),
+                            ],
+                            child: TTTModeBtn(
+                              icon: FontAwesomeIcons.flag,
+                              iconColor: Color(0xffADA999),
+                              onPressed: () {
+                                resetArena();
+                                whoGoesFirst();
+                              },
+                              child: Text(
+                                "Surrender",
+                                style: TextStyle(
+                                    color: Colors.black, fontSize: 25),
+                              ),
+                            ),
+                          ),
+                          BtnArenaBgContainer(
+                            height: screenHeight * 0.12,
+                            width: screenWidth * 0.4,
+                            colors: [
+                              Color(0xffff7518),
+                              Color(0xffFDEE00),
+                            ],
+                            child: TTTModeBtn(
+                              icon: FontAwesomeIcons.computer,
+                              iconColor: Color(0xffff7580),
+                              onPressed: () {},
+                              child: Text(
+                                "Ragebait",
+                                style: TextStyle(
+                                    color: Colors.black, fontSize: 25),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 }

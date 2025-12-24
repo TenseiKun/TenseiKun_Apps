@@ -19,7 +19,7 @@ class _TicTacToeState extends State<TicTacToe> {
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height - 100;
-    double screenWidth = MediaQuery.of(context).size.width - 50;
+    double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         title: Text("TenseiApps: Tic-Tac-Toe"),
@@ -57,14 +57,22 @@ class _TicTacToeState extends State<TicTacToe> {
                               diffPage1: TTTArena(
                                 aiMode: true,
                                 aiDifficulty: "Beginner",
+                                timedMode: false,
                               ),
                               diffPage2: TTTArena(
                                 aiMode: true,
                                 aiDifficulty: "Amateur",
+                                timedMode: false,
                               ),
                               diffPage3: TTTArena(
                                 aiMode: true,
+                                aiDifficulty: "Master",
+                                timedMode: false,
+                              ),
+                              diffPage4: TTTArena(
+                                aiMode: true,
                                 aiDifficulty: "Insanity",
+                                timedMode: false,
                               ),
                             );
                           },
@@ -90,8 +98,16 @@ class _TicTacToeState extends State<TicTacToe> {
                           barrierColor: Colors.black87,
                           builder: (context) {
                             return ShowPlayerModeDialog(
-                              playerModePage1: Calculator(),
-                              playerModePage2: Calculator(),
+                              playerModePage1: TTTArena(
+                                aiMode: false,
+                                aiDifficulty: "",
+                                timedMode: false,
+                              ),
+                              playerModePage2: TTTArena(
+                                aiMode: false,
+                                aiDifficulty: "",
+                                timedMode: true,
+                              ),
                             );
                           },
                         );
