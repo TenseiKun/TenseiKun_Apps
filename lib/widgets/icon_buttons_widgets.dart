@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tenseikun_apps/data/data.dart';
 import 'package:tenseikun_apps/data/notifiers.dart';
 
 class ThemeIconButton extends StatelessWidget {
@@ -12,6 +13,7 @@ class ThemeIconButton extends StatelessWidget {
         return IconButton(
           onPressed: () {
             isDarkModeTheme.value = !isDarkModeTheme.value;
+            saveAppTheme(isDarkModeTheme.value);
           },
           icon:
               Icon(isDarkModeTheme.value ? Icons.dark_mode : Icons.light_mode),

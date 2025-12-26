@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenseikun_apps/pages/applications/1_calculator/calculator_page.dart';
 import 'package:tenseikun_apps/pages/applications/2_ticTacToe/ttt_arena_page.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/btn_widgets.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
@@ -16,6 +16,14 @@ class TicTacToe extends StatefulWidget {
 }
 
 class _TicTacToeState extends State<TicTacToe> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height - 100;
@@ -115,32 +123,6 @@ class _TicTacToeState extends State<TicTacToe> {
                       child: Text(
                         "You vs Friend",
                         style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                    ),
-                  ),
-                  BtnBgContainer(
-                    screenHeight: screenHeight,
-                    screenWidth: screenWidth,
-                    firstColor: Color(0xff3d0c02),
-                    secondColor: Color(0xffb92e34),
-                    child: TTTModeBtn(
-                      icon: FontAwesomeIcons.mountain,
-                      iconColor: Color(0xff3d0c50),
-                      onPressed: () {
-                        showAdaptiveDialog(
-                          context: context,
-                          barrierColor: Colors.black87,
-                          builder: (context) {
-                            return ShowCampaignDialog(
-                              restartPage: Calculator(),
-                              lastProgressPage: Calculator(),
-                            );
-                          },
-                        );
-                      },
-                      child: Text(
-                        "Campaign",
-                        style: TextStyle(color: Colors.white, fontSize: 25),
                       ),
                     ),
                   ),

@@ -53,3 +53,11 @@
 - Fixed turn switching logic
 - Added Casual and Timed Mode under You vs. Friend selection menu
 
+# Version 0.19.5
+**Fixing Tic-Tac-Toe**
+- Now supports usernames with saved wins count and win rate data.
+- Now supports AI with randomized name, win count and win rate data.
+- Added minor SFX
+- Removed Campaign
+
+

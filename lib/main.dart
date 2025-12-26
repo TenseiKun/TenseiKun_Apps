@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:tenseikun_apps/data/data.dart';
 import 'package:tenseikun_apps/data/notifiers.dart';
 import 'package:tenseikun_apps/pages/app_selection_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await loadEverything();
   runApp(const MainApp());
 }
 

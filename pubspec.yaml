@@ -7,11 +7,13 @@ environment:
   sdk: ^3.6.0
 
 dependencies:
+  audioplayers: ^6.5.1
+  confetti: ^0.8.0
   flutter:
     sdk: flutter
   font_awesome_flutter: ^10.9.1
   math_expressions: ^2.6.0
-  # audioplayers: ^6.5.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +26,6 @@ flutter:
     - assets/images/paper.png
     - assets/images/rock.png
     - assets/images/scissor.png
+    - assets/sounds/player1_tapSound.mp3
+    - assets/sounds/player2_tapSound.mp3
+    - assets/sounds/winnerAnnouncement.mp3

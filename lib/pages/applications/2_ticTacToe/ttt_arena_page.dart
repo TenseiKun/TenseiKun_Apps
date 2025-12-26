@@ -2,12 +2,16 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tenseikun_apps/data/2_TicTacToe/TTT_AI.dart';
+import 'package:tenseikun_apps/data/2_TicTacToe/tic_tac_toe_ai.dart';
+import 'package:tenseikun_apps/sfx/2_tic_tac_toe_sounds/tic_tac_toe_sfx.dart';
 
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/dialog_widgets.dart';
 
+import '../../../data/2_TicTacToe/data_tictactoe.dart';
+import '../../../model/2_ticTacToe_models/player_models.dart';
 import '../../../widgets/dialog_widgets.dart';
 import '../../../widgets/icon_buttons_widgets.dart';
 import '../../../widgets/widgets_2_ticTacToe/btn_widgets.dart';
@@ -27,6 +31,9 @@ class TTTArena extends StatefulWidget {
 }
 
 class _TTTArenaState extends State<TTTArena> {
+  List<Users> usersList = [];
+  Users? currentP1User;
+  Users? currentP2User;
   bool arenaReady = false;
   Random random = Random();
   Timer? turnTime;
@@ -38,22 +45,55 @@ class _TTTArenaState extends State<TTTArena> {
   late String currentPlayer;
   String player1Lbl = "Player 1";
   String player2Lbl = "Player 2";
-  String player1Name = "Jiante Marata";
-  String player2Name = "Kurosaki Ichigo";
-  String winNumberP1 = "10";
-  String winNumberP2 = "6";
-  String winRateP1 = "100%";
-  String winRateP2 = "69.42%";
+  String? playerAiName;
+  int? playerAiWins;
+  int? playerAiTotalMatch;
+  double? playerAiWinRate;
+  bool? noWinner;
   bool aiMode = false;
   bool disablePlayerTurn = false;
   bool timedMode = false;
+
+  final List<String> aiRandomNames = [
+    "Santiago",
+    "Raiden",
+    "Phainon",
+    "Miko",
+    "Reymark",
+    "Mark",
+    "Lester",
+    "Cedrick",
+    "Kyle",
+    "Marie",
+    "Justin",
+    "Elysia",
+    "Camelia",
+    "Mika",
+    "Erisa",
+    "Ellen",
+    "Xifu"
+  ];
+
+  final List<List<int>> winPatterns = [
+    //rows
+    [00, 01, 02],
+    [10, 11, 12],
+    [20, 21, 22],
+    //columns
+    [00, 10, 20],
+    [01, 11, 21],
+    [02, 12, 22],
+    //diagonals
+    [00, 11, 22],
+    [20, 11, 02],
+  ];
 
   String arenaText() {
     return "Turn $turnCounter";
   }
 
   String subArenaText() {
-    return "${checkCurrentPlayer()}: ${playerTag ? player1Name : player2Name} acting!";
+    return "${checkCurrentPlayer()}: ${playerTag ? currentP1User!.name : (aiMode ? playerAiName : currentP2User!.name)} acting!";
   }
 
   String checkCurrentPlayer() {
@@ -75,25 +115,36 @@ class _TTTArenaState extends State<TTTArena> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     whoGoesFirst();
   }
 
   @override
   void dispose() {
     super.dispose();
-    turnTime!.cancel();
+    if (turnTime != null) {
+      turnTime!.cancel();
+    }
+    TTTSoundEffects.player.stop();
   }
 
-  void whoGoesFirst() {
+  void whoGoesFirst() async {
+    await loadUsersList();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final result = await showDialog(
+      Map result = await showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) {
           return MatchUpDlg(aiMode: widget.aiMode);
         },
       );
-      playerTag = result;
+      playerTag = result['playerTag'];
+      currentP1User = result['currentP1User'];
+      if (result["currentP2User"] != null) {
+        currentP2User = result['currentP2User'];
+      }
       readyArena();
       if (aiMode && playerTag == false) {
         switchPlayer();
@@ -104,18 +155,70 @@ class _TTTArenaState extends State<TTTArena> {
   void readyArena() {
     aiMode = widget.aiMode;
     timedMode = widget.timedMode;
-    arenaReady = true;
     if (aiMode) {
       player2Lbl = "Player AI";
-      player2Name = "Bing Chilling";
+      playerAiName = aiRandomNames[random.nextInt(aiRandomNames.length)];
+      playerAiTotalMatch = random.nextInt(160) + 1;
+      playerAiTotalMatch = random.nextInt(160) + 20;
+      playerAiWins = random.nextInt(playerAiTotalMatch!);
+      playerAiWinRate = (playerAiWins! / playerAiTotalMatch!) * 100;
     }
+    arenaReady = true;
     if (timedMode) {
       turnTimer();
     }
     setState(() {});
   }
 
+  Future loadUsersList() async {
+    final users = await loadTicTacToeUsers();
+    setState(() {
+      usersList = users;
+    });
+  }
+
+  Future updateUsersList(bool player1Winner, bool noWinner, bool aiMode) async {
+    await loadUsersList();
+    if (!aiMode) {
+      Users winnerPlayer;
+      Users loserPlayer;
+      if (player1Winner) {
+        winnerPlayer = currentP1User!;
+        loserPlayer = currentP2User!;
+      } else {
+        winnerPlayer = currentP2User!;
+        loserPlayer = currentP1User!;
+      }
+      Users matchedUserWinner = usersList.firstWhere(
+          (user) => user.name.toLowerCase() == winnerPlayer.name.toLowerCase());
+      if (noWinner == false) {
+        matchedUserWinner.wins += 1;
+      }
+      matchedUserWinner.totalMatch += 1;
+      matchedUserWinner.winRate =
+          (matchedUserWinner.wins / matchedUserWinner.totalMatch) * 100;
+      Users matchedUserLoser = usersList.firstWhere(
+          (user) => user.name.toLowerCase() == loserPlayer.name.toLowerCase());
+      matchedUserLoser.totalMatch += 1;
+      matchedUserLoser.winRate =
+          (matchedUserLoser.wins / matchedUserLoser.totalMatch) * 100;
+    } else {
+      Users humanPlayer;
+      humanPlayer = currentP1User!;
+      Users matchedUserWinner = usersList.firstWhere(
+          (user) => user.name.toLowerCase() == humanPlayer.name.toLowerCase());
+      if (noWinner == false && player1Winner) {
+        matchedUserWinner.wins += 1;
+      }
+      matchedUserWinner.totalMatch += 1;
+      matchedUserWinner.winRate =
+          (matchedUserWinner.wins / matchedUserWinner.totalMatch) * 100;
+    }
+    await saveTicTacToeUsers(usersList);
+  }
+
   void onTap(int index) {
+    for (var i = 0; i < usersList.length; i++) {}
     if (disablePlayerTurn) {
       return;
     }
@@ -123,11 +226,12 @@ class _TTTArenaState extends State<TTTArena> {
       setState(() {});
       return;
     }
+    TTTSoundEffects.arenaTapSound(playerTag);
     boxes[index] = checkCurrentPlayer();
     if (checkWinner(checkCurrentPlayer())) {
       setState(() {});
       return;
-    } else if (noWinner()) {
+    } else if (noOneWins()) {
       setState(() {});
       return;
     }
@@ -160,10 +264,11 @@ class _TTTArenaState extends State<TTTArena> {
       await aiThinking();
       boxes[aiActing(widget.aiDifficulty, boxes, player1Lbl, player2Lbl)!] =
           checkCurrentPlayer();
+      TTTSoundEffects.arenaTapSound(playerTag);
       if (checkWinner(checkCurrentPlayer())) {
         setState(() {});
         return;
-      } else if (noWinner()) {
+      } else if (noOneWins()) {
         setState(() {});
         return;
       }
@@ -191,20 +296,6 @@ class _TTTArenaState extends State<TTTArena> {
     disablePlayerTurn = false;
   }
 
-  final List<List<int>> winPatterns = [
-    //rows
-    [00, 01, 02],
-    [10, 11, 12],
-    [20, 21, 22],
-    //columns
-    [00, 10, 20],
-    [01, 11, 21],
-    [02, 12, 22],
-    //diagonals
-    [00, 11, 22],
-    [20, 11, 02],
-  ];
-
   bool checkWinner(String currentPlayer) {
     for (var pattern in winPatterns) {
       int a = pattern[0];
@@ -220,8 +311,7 @@ class _TTTArenaState extends State<TTTArena> {
     return false;
   }
 
-  bool noWinner() {
-    bool noWinner;
+  bool noOneWins() {
     if (boxes[00] != null &&
         boxes[01] != null &&
         boxes[02] != null &&
@@ -233,16 +323,22 @@ class _TTTArenaState extends State<TTTArena> {
         boxes[22] != null) {
       noWinner = true;
       announceWinner(status: noWinner);
-      return noWinner;
+      return noWinner!;
     } else {
       noWinner = false;
-      return noWinner;
+      return noWinner!;
     }
   }
 
   void announceWinner({bool? status}) {
     if (timedMode) {
       turnTime!.cancel();
+    }
+    if (!aiMode) {
+      TTTSoundEffects.arenaWinnerSound();
+    }
+    if (aiMode && playerTag) {
+      TTTSoundEffects.arenaWinnerSound();
     }
     showDialog(
       barrierDismissible: false,
@@ -256,16 +352,19 @@ class _TTTArenaState extends State<TTTArena> {
                   : player2Lbl,
           winnerPlayerName: status == true
               ? "No one"
-              : (playerTag ? player1Name : player2Name),
+              : "${playerTag ? currentP1User!.name : (aiMode ? playerAiName : currentP2User!.name)}",
           turns: turnCounter,
-          onPressedRestart: () {
+          onPressedRestart: () async {
             Navigator.pop(context);
+            TTTSoundEffects.player.stop();
+            await updateUsersList(playerTag, noWinner!, aiMode);
             resetArena();
             whoGoesFirst();
           },
-          onPressedCancel: () {
+          onPressedCancel: () async {
             Navigator.pop(context);
             Navigator.pop(context);
+            await updateUsersList(playerTag, noWinner!, aiMode);
           },
         );
       },
@@ -315,20 +414,9 @@ class _TTTArenaState extends State<TTTArena> {
     double panelForBoxes = screenHeight * 0.5;
     double panelForButtons = screenHeight * 0.32;
     if (!arenaReady) {
-      return Scaffold(
-        body: SafeArea(
-          child: Container(
-            color: Colors.green[900],
-            padding: EdgeInsets.all(8),
-            child: Center(
-              child: SizedBox(
-                width: screenWidth * 0.8,
-                height: screenHeight * 0.5,
-                child: CircularProgressIndicator.adaptive(),
-              ),
-            ),
-          ),
-        ),
+      return LoadingDataWidget(
+        screenHeight: screenHeight,
+        screenWidth: screenWidth,
       );
     } else {
       return Scaffold(
@@ -478,44 +566,45 @@ class _TTTArenaState extends State<TTTArena> {
                   child: Column(
                     spacing: 20,
                     children: [
-                      FittedBox(
-                        child: Row(
-                          spacing: 10,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "PLAYER 1",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 10,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                player1Lbl.toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                Text("Username: $player1Name"),
-                                Text("Wins: $winNumberP1"),
-                                Text("Win rate: $winRateP1"),
-                                Text("Why are we here? just to suffer")
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "PLAYER 2",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              ),
+                              Text("Username: ${currentP1User!.name}"),
+                              Text("Wins: ${currentP1User!.wins}"),
+                              Text(
+                                  "Win rate: ${currentP1User!.winRate.toStringAsFixed(2)}"),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                player2Lbl.toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                Text("Username: $player2Name"),
-                                Text("Wins: $winNumberP2"),
-                                Text("Win rate: $winRateP2"),
-                                Text("Like share and subscribe!")
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                              Text(
+                                  "Username: ${aiMode ? playerAiName! : currentP2User!.name}"),
+                              Text(
+                                  "Wins: ${aiMode ? playerAiWins! : currentP2User!.wins}"),
+                              Text(
+                                  "Win rate: ${aiMode ? playerAiWinRate!.toStringAsFixed(2) : currentP2User!.winRate.toStringAsFixed(2)}"),
+                            ],
+                          ),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -572,5 +661,32 @@ class _TTTArenaState extends State<TTTArena> {
         ),
       );
     }
+  }
+}
+
+class LoadingDataWidget extends StatelessWidget {
+  const LoadingDataWidget(
+      {super.key, required this.screenWidth, required this.screenHeight});
+
+  final double screenWidth;
+  final double screenHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Container(
+          color: Colors.green[900],
+          padding: EdgeInsets.all(8),
+          child: Center(
+            child: SizedBox(
+              width: screenWidth * 0.8,
+              height: screenHeight * 0.5,
+              child: CircularProgressIndicator.adaptive(),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

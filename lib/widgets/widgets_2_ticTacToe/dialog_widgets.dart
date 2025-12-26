@@ -6,6 +6,8 @@ import 'package:tenseikun_apps/model/2_ticTacToe_models/player_models.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/btn_widgets.dart';
 import 'package:tenseikun_apps/widgets/widgets_2_ticTacToe/container_widgets.dart';
 
+import '../../data/2_TicTacToe/data_tictactoe.dart';
+
 class ShowDifficultiesDialog extends StatelessWidget {
   const ShowDifficultiesDialog({
     super.key,
@@ -192,76 +194,74 @@ class ShowPlayerModeDialog extends StatelessWidget {
   }
 }
 
-class ShowCampaignDialog extends StatelessWidget {
-  const ShowCampaignDialog({
-    super.key,
-    required this.restartPage,
-    required this.lastProgressPage,
-  });
-
-  final Widget restartPage;
-  final Widget lastProgressPage;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.transparent,
-      contentPadding: EdgeInsets.all(0),
-      titlePadding: EdgeInsets.all(10),
-      title: Text(
-        "Choose Difficulty",
-        textAlign: TextAlign.center,
-      ),
-      content: DlgBgContainer(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SelectBtn(
-                btnColor: Colors.green,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return restartPage;
-                      },
-                    ),
-                  );
-                },
-                child: Text(
-                  "Start Campaign",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-              ),
-              SelectBtn(
-                btnColor: Colors.yellow,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return lastProgressPage;
-                      },
-                    ),
-                  );
-                },
-                child: Text(
-                  "Continue Last Progress",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// class ShowCampaignDialog extends StatelessWidget {
+//   const ShowCampaignDialog({
+//     super.key,
+//     required this.restartPage,
+//     required this.lastProgressPage,
+//   });
+//   final Widget restartPage;
+//   final Widget lastProgressPage;
+//   @override
+//   Widget build(BuildContext context) {
+//     return AlertDialog(
+//       backgroundColor: Colors.transparent,
+//       contentPadding: EdgeInsets.all(0),
+//       titlePadding: EdgeInsets.all(10),
+//       title: Text(
+//         "Choose Difficulty",
+//         textAlign: TextAlign.center,
+//       ),
+//       content: DlgBgContainer(
+//         child: Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               SelectBtn(
+//                 btnColor: Colors.green,
+//                 onPressed: () {
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(
+//                       builder: (context) {
+//                         return restartPage;
+//                       },
+//                     ),
+//                   );
+//                 },
+//                 child: Text(
+//                   "Start Campaign",
+//                   style: TextStyle(
+//                       fontWeight: FontWeight.bold, color: Colors.black),
+//                 ),
+//               ),
+//               SelectBtn(
+//                 btnColor: Colors.yellow,
+//                 onPressed: () {
+//                   Navigator.of(context).pop();
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(
+//                       builder: (context) {
+//                         return lastProgressPage;
+//                       },
+//                     ),
+//                   );
+//                 },
+//                 child: Text(
+//                   "Continue Last Progress",
+//                   style: TextStyle(
+//                       fontWeight: FontWeight.bold, color: Colors.black),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class ShowWinnerDialog extends StatelessWidget {
   const ShowWinnerDialog(
@@ -351,6 +351,9 @@ class MatchUpDlg extends StatefulWidget {
 }
 
 class _FirstTurnDlgState extends State<MatchUpDlg> {
+  List<Users> usersList = [];
+  Users? currentP1User;
+  Users? currentP2User;
   Random random = Random();
   Timer? timer;
   double opacityLevel = 0;
@@ -362,6 +365,8 @@ class _FirstTurnDlgState extends State<MatchUpDlg> {
   bool matchUpTime = false;
   bool? playerTag;
   bool? firstOrSecond = true;
+  TextEditingController p1NameController = TextEditingController();
+  TextEditingController p2NameController = TextEditingController();
   List<Hands> hands = [
     Hands(
         playHandTitle: "Rock",
@@ -409,7 +414,10 @@ class _FirstTurnDlgState extends State<MatchUpDlg> {
               } else {
                 playerTag = false;
               }
-              Navigator.pop(context, playerTag);
+              Navigator.pop(context, {
+                "playerTag": playerTag,
+                "currentP1User": currentP1User,
+              });
             }
           } else {
             showDialog(
@@ -448,6 +456,67 @@ class _FirstTurnDlgState extends State<MatchUpDlg> {
     );
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await loadUsersList();
+      await loadRecentUser(player1Choosing);
+    });
+  }
+
+  Future loadUsersList() async {
+    final users = await loadTicTacToeUsers();
+    setState(() {
+      usersList = users;
+    });
+  }
+
+  Future saveUsersList(Users newUser) async {
+    setState(() {
+      usersList.add(newUser);
+    });
+    await saveTicTacToeUsers(usersList);
+  }
+
+  Future matchUser(String name) async {
+    try {
+      Users matchedUser = usersList.firstWhere(
+          (user) => user.name.toLowerCase() == name.toString().toLowerCase());
+      if (player1Choosing) {
+        currentP1User = matchedUser;
+      } else {
+        currentP2User = matchedUser;
+      }
+    } catch (e) {
+      Users newUser = Users(
+        name: name,
+        wins: 0,
+        totalMatch: 0,
+        winRate: 100,
+      );
+      await saveUsersList(newUser);
+      if (player1Choosing) {
+        currentP1User = newUser;
+      } else {
+        currentP2User = newUser;
+      }
+    }
+  }
+
+  Future loadRecentUser(bool player1Choosing) async {
+    if (player1Choosing) {
+      p1NameController.text = await loadRecentTicTacToeUser(player1Choosing);
+    } else {
+      p2NameController.text = await loadRecentTicTacToeUser(player1Choosing);
+    }
+    setState(() {});
+  }
+
+  Future saveRecentUser(bool player1Choosing, String recentUser) async {
+    await saveRecentTicTacToeUser(player1Choosing, recentUser);
+  }
+
   String aiHands() {
     double aiProbability = random.nextDouble();
     if (aiProbability < 0.4) {
@@ -465,186 +534,235 @@ class _FirstTurnDlgState extends State<MatchUpDlg> {
     double screenWidth = MediaQuery.of(context).size.width;
     return PopScope(
       canPop: false,
-      child: AlertDialog(
-        backgroundColor: Colors.transparent,
-        contentPadding: EdgeInsets.all(0),
-        titlePadding: EdgeInsets.all(10),
-        title: FittedBox(
-          child: Text(
-            timer == null
-                ? "${player1Choosing ? "Player 1" : "Player 2"}: Choose your hand"
-                : "Choose who goes first",
-            textAlign: TextAlign.center,
-          ),
-        ),
-        content: DlgBgContainer(
-          child: Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 10,
-              children: [
-                if (matchUpTime == false) ...[
-                  Text(
-                    "Win to get the privilege of going first or second.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  ...List.generate(
-                    hands.length,
-                    (index) {
-                      return ListTile(
-                        leading: Image.asset(
-                          hands[index].imageAsset,
-                        ),
-                        title: Text(hands[index].playHandTitle),
-                        trailing: Radio.adaptive(
-                          value: hands[index].playHand,
-                          groupValue: playerOption,
-                          onChanged: (String? value) {
-                            setState(() {
-                              playerOption = value!;
-                            });
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  Text(
-                    "*Hide your playing hand from your opponent*",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic),
-                  ),
-                  SelectBtn(
-                    btnColor: Colors.green,
-                    onPressed: () async {
-                      if (player1Choosing) {
-                        setState(() {
-                          player1Hand = playerOption;
-                          player1Choosing = false;
-                          playerOption = "rock";
-                        });
-                        if (widget.aiMode) {
-                          setState(() {
-                            player2Hand = aiHands();
-                            matchUpTime = true;
-                          });
-                          showHand();
-                          decidingWinnerHand(player1Hand, player2Hand);
-                        }
-                      } else {
-                        setState(() {
-                          player2Hand = playerOption;
-                          matchUpTime = true;
-                        });
-                        showHand();
-                        decidingWinnerHand(player1Hand, player2Hand);
-                      }
-                    },
-                    child: Text(
-                      "Choose ${playerOption == "rock" ? "Rock" : playerOption == "paper" ? "Paper" : "Scissor"}",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
-                ] else ...[
-                  Text(
-                    "Deciding the winner",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  Row(
-                    spacing: 4,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedOpacity(
-                        opacity: opacityLevel,
-                        duration: Duration(seconds: 2),
-                        curve: Curves.linear,
-                        child: Image.asset(
-                          height: screenHeight * 0.4,
-                          width: screenWidth * 0.3,
-                          (player1Hand == "rock"
-                              ? hands[0].imageAsset
-                              : player1Hand == "paper"
-                                  ? hands[1].imageAsset
-                                  : hands[2].imageAsset),
-                        ),
+      child: Center(
+        child: SingleChildScrollView(
+          child: AlertDialog(
+            backgroundColor: Colors.transparent,
+            contentPadding: EdgeInsets.all(0),
+            titlePadding: EdgeInsets.all(10),
+            title: FittedBox(
+              child: Text(
+                timer == null
+                    ? "${player1Choosing ? "Player 1" : "Player 2"}: Choose your hand"
+                    : "Choose who goes first",
+                textAlign: TextAlign.center,
+              ),
+            ),
+            content: DlgBgContainer(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 10,
+                  children: [
+                    if (matchUpTime == false) ...[
+                      Text(
+                        "Win to get the privilege of going first or second.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 20),
                       ),
-                      AnimatedOpacity(
-                        opacity: opacityLevel,
-                        duration: Duration(seconds: 2),
-                        curve: Curves.linear,
-                        child: Image.asset(
-                          height: screenHeight * 0.4,
-                          width: screenWidth * 0.3,
-                          (player2Hand == "rock"
-                              ? hands[0].imageAsset
-                              : player2Hand == "paper"
-                                  ? hands[1].imageAsset
-                                  : hands[2].imageAsset),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    "Player that will decide is... ${player1Winner == null ? " " : player1Winner == true ? "Player 1!" : "Player 2!"}",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 18,
-                      ),
-                      Radio(
-                        value: player1Winner == true,
-                        groupValue: firstOrSecond,
-                        onChanged: (value) {
-                          if (player1Winner != null) {
-                            setState(() {
-                              firstOrSecond = value;
-                            });
-                          }
+                      ...List.generate(
+                        hands.length,
+                        (index) {
+                          return ListTile(
+                            leading: Image.asset(
+                              hands[index].imageAsset,
+                            ),
+                            title: Text(hands[index].playHandTitle),
+                            trailing: Radio.adaptive(
+                              value: hands[index].playHand,
+                              groupValue: playerOption,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  playerOption = value!;
+                                });
+                              },
+                            ),
+                          );
                         },
                       ),
                       Text(
-                        "I go first!",
-                        style: TextStyle(fontSize: 13),
+                        "*Hide your playing hand from your opponent*",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 10, fontStyle: FontStyle.italic),
                       ),
-                      Radio(
-                        value: player1Winner == false,
-                        groupValue: firstOrSecond,
-                        onChanged: (value) {
-                          if (player1Winner != null) {
+                      TextField(
+                        maxLength: 10,
+                        buildCounter: (context,
+                                {required currentLength,
+                                required isFocused,
+                                required maxLength}) =>
+                            null,
+                        keyboardType: TextInputType.name,
+                        controller: player1Choosing
+                            ? p1NameController
+                            : p2NameController,
+                        decoration: InputDecoration(
+                          hintText: "What's your player name?",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(20),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SelectBtn(
+                        btnColor: Colors.green,
+                        onPressed: () async {
+                          if (player1Choosing &&
+                              p1NameController.text.isEmpty) {
+                            return;
+                          }
+                          if (!player1Choosing &&
+                              p2NameController.text.isEmpty) {
+                            return;
+                          }
+                          if (p1NameController.text.trim() ==
+                              p2NameController.text.trim()) {
+                            return;
+                          }
+                          await matchUser(player1Choosing
+                              ? p1NameController.text
+                              : p2NameController.text);
+                          await saveRecentUser(
+                              player1Choosing, p1NameController.text);
+                          if (player1Choosing) {
                             setState(() {
-                              firstOrSecond = value;
+                              player1Hand = playerOption;
+                              player1Choosing = false;
+                              playerOption = "rock";
+                            });
+                            await loadRecentUser(player1Choosing);
+                            if (widget.aiMode) {
+                              setState(() {
+                                player2Hand = aiHands();
+                                matchUpTime = true;
+                              });
+                              showHand();
+                              decidingWinnerHand(player1Hand, player2Hand);
+                            }
+                          } else {
+                            await saveRecentUser(
+                                player1Choosing, p2NameController.text);
+                            setState(() {
+                              player2Hand = playerOption;
+                              matchUpTime = true;
+                            });
+                            showHand();
+                            decidingWinnerHand(player1Hand, player2Hand);
+                          }
+                        },
+                        child: Text(
+                          "Choose ${playerOption == "rock" ? "Rock" : playerOption == "paper" ? "Paper" : "Scissor"}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ),
+                    ] else ...[
+                      Text(
+                        "Deciding the winner",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 20),
+                      ),
+                      Row(
+                        spacing: 4,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedOpacity(
+                            opacity: opacityLevel,
+                            duration: Duration(seconds: 2),
+                            curve: Curves.linear,
+                            child: Image.asset(
+                              height: screenHeight * 0.4,
+                              width: screenWidth * 0.3,
+                              (player1Hand == "rock"
+                                  ? hands[0].imageAsset
+                                  : player1Hand == "paper"
+                                      ? hands[1].imageAsset
+                                      : hands[2].imageAsset),
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: opacityLevel,
+                            duration: Duration(seconds: 2),
+                            curve: Curves.linear,
+                            child: Image.asset(
+                              height: screenHeight * 0.4,
+                              width: screenWidth * 0.3,
+                              (player2Hand == "rock"
+                                  ? hands[0].imageAsset
+                                  : player2Hand == "paper"
+                                      ? hands[1].imageAsset
+                                      : hands[2].imageAsset),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        "Player that will decide is... ${player1Winner == null ? " " : player1Winner == true ? "Player 1!" : "Player 2!"}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 18,
+                          ),
+                          Radio(
+                            value: player1Winner == true,
+                            groupValue: firstOrSecond,
+                            onChanged: (value) {
+                              if (player1Winner != null) {
+                                setState(() {
+                                  firstOrSecond = value;
+                                });
+                              }
+                            },
+                          ),
+                          Text(
+                            "I go first!",
+                            style: TextStyle(fontSize: 13),
+                          ),
+                          Radio(
+                            value: player1Winner == false,
+                            groupValue: firstOrSecond,
+                            onChanged: (value) {
+                              if (player1Winner != null) {
+                                setState(() {
+                                  firstOrSecond = value;
+                                });
+                              }
+                            },
+                          ),
+                          Text(
+                            "You go first!",
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      SelectBtn(
+                        btnColor: Colors.green,
+                        onPressed: () {
+                          if (player1Winner != null) {
+                            playerTag = firstOrSecond;
+                            Navigator.pop(context, {
+                              "playerTag": playerTag,
+                              "currentP1User": currentP1User,
+                              "currentP2User": currentP2User
                             });
                           }
                         },
+                        child: Text(
+                          "Start Game",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
                       ),
-                      Text(
-                        "You go first!",
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  SelectBtn(
-                    btnColor: Colors.green,
-                    onPressed: () {
-                      if (player1Winner != null) {
-                        playerTag = firstOrSecond;
-                        Navigator.pop(context, playerTag);
-                      }
-                    },
-                    child: Text(
-                      "Start Game",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
-                ]
-              ],
+                    ]
+                  ],
+                ),
+              ),
             ),
           ),
         ),
