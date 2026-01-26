@@ -11,6 +11,8 @@
 4. [Version 0.13.5](#version-0135)
 5. [Version 0.15](#version-015)
 6. [Version 0.18](#version-018)
+7. [Version 0.19.5](#version-0195)
+8. [Version 0.20.6](#version-0206) 
 
 # Version 0.1
 **Release of Calculator**
@@ -60,4 +62,11 @@
 - Added minor SFX
 - Removed Campaign
 
-
+# Version 0.20.6
+**Release of Daily Apps**
+- Added placeholder features for future development of this app
+- Clock feature added
+- Clock with World Time, Timer, and Stopwatch
+- World time integrated with API for getting real-time timezones data
+- Data saved to local storage (data for selected timezone)
+- Fixed bugs and logics

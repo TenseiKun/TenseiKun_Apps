@@ -183,7 +183,7 @@ class _CalculatorState extends State<Calculator> {
           children: [
             Container(
               padding: EdgeInsets.only(
-                  bottom: screenHeight >= 500 ? 20 : 10, right: 15),
+                  bottom: screenHeight >= 420 ? 20 : 10, right: 15),
               height: panelForOutput,
               width: double.infinity,
               decoration: BoxDecoration(

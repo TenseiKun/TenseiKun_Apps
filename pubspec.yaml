@@ -8,10 +8,13 @@ environment:
 
 dependencies:
   audioplayers: ^6.5.1
-  confetti: ^0.8.0
   flutter:
     sdk: flutter
+  flutter_timezone: ^4.1.1
   font_awesome_flutter: ^10.9.1
+  home_widget: ^0.9.0
+  http: ^1.6.0
+  intl: ^0.20.2
   math_expressions: ^2.6.0
   shared_preferences: ^2.5.3
 
@@ -26,6 +29,7 @@ flutter:
     - assets/images/paper.png
     - assets/images/rock.png
     - assets/images/scissor.png
+    - assets/images/placeholder_image.jpg
     - assets/sounds/player1_tapSound.mp3
     - assets/sounds/player2_tapSound.mp3
     - assets/sounds/winnerAnnouncement.mp3

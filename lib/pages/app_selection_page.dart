@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tenseikun_apps/model/app.dart';
+import 'package:tenseikun_apps/model/app_model.dart';
 import 'package:tenseikun_apps/pages/applications/1_calculator/calculator_page.dart';
 import 'package:tenseikun_apps/pages/applications/2_ticTacToe/ttt_page.dart';
+import 'package:tenseikun_apps/pages/applications/3_daily_apps/daily_apps_selection_page.dart';
 
 import '../widgets/icon_buttons_widgets.dart';
 
@@ -24,9 +25,9 @@ List<Apps> appList = [
     appType: TicTacToe(),
   ),
   Apps(
-      appTitle: "Note taker App",
-      appDesc: "App for taking notes",
-      appType: null),
+      appTitle: "Daily Apps",
+      appDesc: "Common Apps that we always use daily",
+      appType: DailyAppsSelectionPage()),
 ];
 
 class _AppSelectionPageState extends State<AppSelectionPage> {
